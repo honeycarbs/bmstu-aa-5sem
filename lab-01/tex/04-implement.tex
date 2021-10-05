@@ -1,0 +1,286 @@
+\chapter{Технологический раздел}
+
+\section{Требования к ПО}
+Программа должна отвечать следующим требованиям:
+\begin{itemize}
+	\item ПО корректно реагирует на любые действия пользователя;
+	\item ПО возвращает полученное расстояние;
+	\item ПО принимает текстовые данные в любой раскладке.
+	\item Время отклика программы на любое действие пользователя должно быть приемлемым.
+\end{itemize}
+\section{Средства реализации}
+Для реализации ПО был выбран компилируемый многопоточный язык программирования Golang, поскольку язык отличается легкой и быстрой сборкой программ, автоматическим управлением памяти и понятным синтаксисом.
+В качестве среды разработки была выбрана среда VS Code, написание сценариев осуществлялось утилитой make.
+\section{Листинги кода}
+\subsection{Реализация алгоритмов}
+
+В качестве представления строковых данных был выбран тип rune\cite{rune} -- псевдоним для типа int32. 
+
+В листингах \ref{matrix-iter} - \ref{damer-lev-rec} приведены реализации алгоритмов, описанных в разделе \ref{analyth}.
+
+\begin{lstlisting}[label=matrix-iter,caption=Программный код нахождения расстояния Левенштейна итеративно]
+func LevenshteinMatrixIterative(src, dest []rune) int {
+	srcLen, destLen := len(src), len(dest)
+	
+	rows, cols := srcLen + 1, destLen + 1
+	DMtx := matrix.IMtxInit(rows, cols, 0)
+	
+	for i := 1; i < rows; i++ {
+		DMtx[i][0] = i
+	}
+	for j := 1; j < cols; j++ {
+		DMtx[0][j] = j
+	}
+	
+	match := 0
+	for i := 1; i < rows; i++ {
+		for j := 1; j < cols; j++ {
+			if src[i - 1] == dest[j - 1] {
+				match = 0
+			} else {
+				match = 1
+			}
+			insert  := DMtx[i][j - 1] + 1
+			delete  := DMtx[i - 1][j] + 1
+			replace := DMtx[i - 1][j - 1] + match
+			
+			min := utils.MinOfInt(insert, delete, replace)
+			DMtx[i][j] = min
+		}
+	}
+	return DMtx[rows - 1][cols - 1]
+}
+\end{lstlisting}
+~\newline
+В рекурсивной части алгоритма нахождения расстояния Левенштейна с мемоизацией в качестве входных данных выступают не только строки, но еще и матрица расстояний. Поскольку все функции нахождения расстояния приведены к единому виду, было решено разделить реализацию алгоритма на две части -- часть с запуском рекурсии и начальной инициализацией и рекурсивная часть алгоритма. Таким образом, пользователь с матрицей расстояний никак не взаимодействует.
+\newline
+\begin{lstlisting}[label=memo-helper,caption=Программный код нахождения расстояния Левенштейна с мемоизацией]
+func LevenshteinPartialMemo(src, dest []rune) int {
+	srcLen, destLen := len(src), len(dest)
+	
+	rows, cols := srcLen + 1, destLen + 1
+	DMtx := matrix.IMtxInit(rows, cols, -1)
+	
+	ans := _partialMemoHelper(src, dest, srcLen, destLen, DMtx)
+	return ans
+}
+
+func _partialMemoHelper(src, dest []rune, i, j int, 
+DMtx matrix.IMtx) int {
+	if j == 0 {
+		return i
+	}
+	if i == 0 {
+		return j
+	}
+	
+	if DMtx[i][j] != -1 {
+		return DMtx[i][j]
+	}
+	
+	match := 1
+	if src[i - 1] == dest[j - 1] {
+		match = 0
+	}
+	
+	insert  := _partialMemoHelper(src, dest, i, j - 1, DMtx) + 1
+	delete  := _partialMemoHelper(src, dest, i - 1, j, DMtx) + 1
+	replace := match + _partialMemoHelper(src, dest, i - 1, j - 1, DMtx)
+	
+	min := utils.MinOfInt(insert, delete, replace)
+	DMtx[i][j] = min
+	
+	return DMtx[i][j]
+}
+\end{lstlisting}
+~\newline
+Аналогично листингу \ref{memo-helper}, реализация рекурсивного алгоритма разделена на две функции с целью унификации всех функций расстояния.
+~\newline
+\begin{lstlisting}[label=leven-recursive,caption=Программный код нахождения расстояния Левенштейна с рекурсией]
+func LevenshteinRecursive(src, dest []rune) int {
+	srcLen, destLen := len(src), len(dest)
+	
+	ans := _lRecursiveHelper(src, dest, srcLen, destLen)
+	
+	return ans
+}
+
+func _lRecursiveHelper(src, dest []rune, i, j int) int {
+	if (utils.MinOfInt(i, j) == 0) {
+		return utils.Max2Int(i, j)
+	}
+	
+	match := 1
+	if (src[i - 1] == dest[j - 1]) {
+		match = 0
+	}
+	
+	insert := _lRecursiveHelper(src, dest, i, j - 1) + 1
+	delete := _lRecursiveHelper(src, dest, i - 1, j) + 1
+	replace := match + _lRecursiveHelper(src, dest, i - 1, j - 1)
+	
+	min := utils.MinOfInt(insert, delete, replace)
+	return min
+}
+\end{lstlisting}
+
+\begin{lstlisting}[label=damer-lev-iter,caption=Программный код нахождения расстояния Дамерау -- Левенштейна итеративно]
+func DamerauLevenshteinIterative(src, dest []rune) int{
+	srcLen, destLen := len(src), len(dest)
+	
+	rows, cols := srcLen + 1, destLen + 1
+	DMtx := matrix.IMtxInit(rows, cols, 0)
+	
+	for i := 1; i < rows; i++ {
+		DMtx[i][0] = i
+	}
+	for j := 1; j < cols; j++ {
+		DMtx[0][j] = j
+	}
+	
+	match := 0
+	min := 0
+	for i := 1; i < rows; i++ {
+		for j := 1; j < cols; j++ {
+			if src[i - 1] == dest[j - 1] {
+				match = 0
+			} else {
+				match = 1
+			}
+			
+			insert := DMtx[i][j - 1] + 1
+			delete := DMtx[i - 1][j] + 1
+			replace := DMtx[i - 1][j - 1] + match
+			transpose := -1
+			
+			if i > 1 && j > 1 {
+				transpose = DMtx[i - 2][j - 2] + 1
+			}
+			
+			if i > 1 && j > 1 && src[i - 1] == dest[j - 2] 
+			&& src[i - 2] == dest[j - 1] {
+				min = utils.MinOfInt(insert, delete, replace, transpose)
+			} else {
+				min = utils.MinOfInt(insert, delete, replace)
+			}
+			DMtx[i][j] = min
+		}
+	}
+	DMtx[srcLen][destLen] = min
+	return DMtx[srcLen][destLen]
+}	
+\end{lstlisting}
+
+\begin{lstlisting}[label=damer-lev-rec,caption=Программный код нахождения расстояния Дамерау -- Левенштейна рекурсивно]	
+func DamerauLevenshteinRecursive(src, dest []rune) int {
+	srcLen, destLen := len(src), len(dest)
+	
+	ans := _dRecursiveHelper(src, dest, srcLen, destLen)
+	
+	return ans
+}
+
+func _dRecursiveHelper(src, dest []rune, i, j int) int {
+	if (utils.MinOfInt(i, j) == 0) {
+		return utils.Max2Int(i, j)
+	}
+	
+	match := 1
+	if (src[i - 1] == dest[j - 1]) {
+		match = 0
+	}
+	
+	insert := _dRecursiveHelper(src, dest, i, j - 1) + 1
+	delete := _dRecursiveHelper(src, dest, i - 1, j) + 1
+	replace := match + _dRecursiveHelper(src, dest, i - 1, j - 1)
+	
+	transpose := -1
+	
+	if i > 1 && j > 1 {
+		transpose =_dRecursiveHelper(src, dest, i - 2, j - 2) + 1
+	}
+	
+	min := 0
+	if transpose != -1 && src[i - 1] == dest[j - 2] 
+	&& src[i - 2] == dest[j - 1] {
+		min = utils.MinOfInt(insert, delete, replace, transpose)
+	} else {
+		min = utils.MinOfInt(insert, delete, replace)
+	}
+	return min
+}
+\end{lstlisting}
+
+\subsection{Утилиты}
+В листингах \ref{min3} - \ref{i-matrix} приведены используемые утилиты.
+\begin{lstlisting}[label=min3,caption=Функция нахождения минимума из N целых чисел]
+func MinOfInt(values ...int) int {
+	min := values[0]
+	
+	for _, i := range values {
+		if min > i {
+			min = i
+		}
+	}
+	return min
+}
+\end{lstlisting}
+
+\begin{lstlisting}[label=max2,caption=Функция нахождения максимума из двух целых чисел]
+func Max2Int(v1, v2 int) int {
+	if v1 < v2 {
+		return v2
+	}
+	return v1
+}
+\end{lstlisting}
+
+
+\begin{lstlisting}[label=i-matrix,caption=Определение типа целочисленной матрицы; его инициализация и вывод]
+type IMtx [][]int
+
+func IMtxInit(rows, cols, filler int) IMtx {
+	mtx := make(IMtx, rows)
+	for i := range mtx {
+		mtx[i] = make([]int, cols)
+		for j := 0; j < cols; j++ {
+			mtx[i][j] = filler
+		}
+	}
+	return mtx
+}
+
+func IMtxLog(mtx IMtx, rows, cols int) {
+	for i := 0; i < rows; i++ {
+		for j := 0; j < cols; j++ {
+			fmt.Print(mtx[i][j])
+			fmt.Print(" ")
+		}
+		fmt.Println("")
+	}
+}
+\end{lstlisting}
+
+\section{Тестовые данные}
+
+\begin{table}[h!]
+	\begin{center}
+		
+		\begin{tabular}{||c c c | c c c c c||} 
+			\hline
+			№ & $S_1$ & $S_2$ & LIter & LRec & LRecMem & DLIter & DLRec \\ [0.5ex] 
+			\hline\hline
+			1 & << >> & << >> & 0 & 0 & 0 & 0 & 0 \\ 
+			2 & <<book>> & <<back>> & 2 & 2 & 2 & 2 & 2 \\ 
+			3 & <<critical>> & <<colleague>> & 8 & 8 & 8 & 8 & 8 \\ 
+			4 & <<reptile>> & <<perfume>> & 2 & 2 & 2 & 2 & 2 \\ 
+			5 & <<note>> & <<fset>> & 4 & 4 & 4 & 3 & 3 \\
+			6 & <<bow>> & <<elbow>> & 2 & 2 & 2 & 2 & 2 \\   
+			6 & <<same>> & <<same>> & 0 & 0 & 0 & 0 & 0 \\   
+			\hline
+		\end{tabular}
+	\end{center}
+\end{table}
+
+\section{Вывод}
+На основе схем из конструкторского раздела были разработаны программные реализации требуемых алгоритмов.

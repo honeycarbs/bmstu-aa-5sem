@@ -1,0 +1,128 @@
+\usepackage{cmap}
+\usepackage[T1]{fontenc} 
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+
+\usepackage{enumitem}
+
+\usepackage{graphicx}
+\usepackage{multirow}
+
+\usepackage{tikz}
+\usepackage{pgfplots}
+
+\usepackage{caption}
+\captionsetup{labelsep=endash}
+\captionsetup[figure]{name={Рисунок}}
+
+\usepackage{amsmath}
+
+\usepackage{geometry}
+\geometry{left=30mm}
+\geometry{right=15mm}
+\geometry{top=20mm}
+\geometry{bottom=20mm}
+
+\usepackage{titlesec}
+\titleformat{\section}
+{\normalsize\bfseries}
+{\thesection}
+{1em}{}
+\titlespacing*{\chapter}{0pt}{-30pt}{8pt}
+\titlespacing*{\section}{\parindent}{*4}{*4}
+\titlespacing*{\subsection}{\parindent}{*4}{*4}
+
+\usepackage{setspace}
+\onehalfspacing % Полуторный интервал
+
+\frenchspacing
+\usepackage{indentfirst} % Красная строка
+
+\usepackage{titlesec}
+\usepackage{xcolor}
+% Названия глав
+\titleformat{\section}{\normalsize\textmd}{\thesection}{1em}{}
+
+\definecolor{gray75}{gray}{0.75}
+
+\newcommand{\hsp}{\hspace{20pt}} % длина линии в 20pt
+
+\titleformat{\chapter}[hang]{\Huge}{\thechapter\hsp\textcolor{gray75}{|}\hsp}{0pt}{\Huge\textmd}
+
+\titleformat{\section}{\Large}{\thesection}{20pt}{\Large\textmd}
+\titleformat{\subsection}{\Large}{\thesubsection}{20pt}{\Large\textmd}
+\titleformat{\subsubsection}{\normalfont\textmd}{}{0pt}{}
+
+% Настройки оглавления
+
+\addtocontents{toc}{\setcounter{tocdepth}{2}}
+\addtocontents{toc}{\setcounter{secnumdepth}{1}}
+
+\usepackage{tocloft,lipsum,pgffor}
+
+\addtocontents{toc}{~\hfill\textnormal{Страница}\par}
+
+\usepackage{minitoc}
+
+\renewcommand{\cfttoctitlefont}{\Huge\textmd}
+
+\renewcommand{\cftpartfont}{\normalfont\textmd}
+
+\renewcommand{\cftchapfont}{\normalfont\normalsize}
+\renewcommand{\cftsecfont}{\normalfont\normalsize}
+\renewcommand{\cftsubsecfont}{\normalfont\normalsize}
+\renewcommand{\cftsubsubsecfont}{\normalfont\normalsize}
+
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
+
+\usepackage{listings}
+\usepackage{xcolor}
+
+\bibliographystyle{gost-numeric.bbx}
+\usepackage[backend=biber,
+sorting=none,
+]{biblatex} 
+
+
+\addbibresource{ref-lib.bib} % База библиографии
+
+\usepackage[pdftex]{hyperref} % Гиперссылки
+\hypersetup{hidelinks}
+
+% Листинги 
+\usepackage{listings}
+
+\definecolor{darkgray}{gray}{0.15}
+
+\usepackage{listings-golang}
+\lstset{ % add your own preferences
+	frame=single,
+	basicstyle=\footnotesize\ttfamily,
+	identifierstyle=\color{darkgray},
+	keywordstyle=\color{black},
+	numbers=left,
+	numbersep=5pt,
+	numberstyle=\tiny,
+	showstringspaces=false, 
+	captionpos=t,
+	tabsize=4,
+	language=Golang
+}
+
+% какой то сложный кусок со стак эксчейндж для квадратных скобок
+\usepackage{array}
+\DeclareMathOperator{\rank}{rank}
+\makeatletter
+\newenvironment{sqcases}{%
+	\matrix@check\sqcases\env@sqcases
+}{%
+	\endarray\right.%
+}
+\def\env@sqcases{%
+	\let\@ifnextchar\new@ifnextchar
+	\left\lbrack
+	\def\arraystretch{1.2}%
+	\array{@{}l@{\quad}l@{}}%
+}
+\makeatother
+
