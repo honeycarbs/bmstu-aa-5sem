@@ -1,0 +1,164 @@
+\usepackage{cmap}
+\usepackage[T1]{fontenc} 
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+
+\usepackage{caption}
+\usepackage{subcaption}
+
+\usepackage{float}
+
+\usepackage{enumitem}
+
+\usepackage{graphicx}
+\usepackage{multirow}
+
+
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+\usepgfplotslibrary{units}
+
+\usepackage{caption}
+\captionsetup{labelsep=endash}
+\captionsetup[figure]{name={Рисунок}}
+\captionsetup[subtable]{labelformat=simple}
+\captionsetup[subfigure]{labelformat=simple}
+\renewcommand{\thesubtable}{\text{Таблица }\arabic{chapter}\text{.}\arabic{table}\text{.}\arabic{subtable}\text{ --}}
+\renewcommand{\thesubfigure}{\text{Рисунок }\arabic{chapter}\text{.}\arabic{figure}\text{.}\arabic{subfigure}\text{ --}}
+
+
+\usepackage{textcomp}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{array}
+
+\usepackage{geometry}
+\geometry{left=30mm}
+\geometry{right=15mm}
+\geometry{top=20mm}
+\geometry{bottom=20mm}
+\geometry{foot=1.7cm}
+
+\usepackage{titlesec}
+\titleformat{\section}
+{\normalsize\bfseries}
+{\thesection}
+{1em}{}
+\titlespacing*{\chapter}{0pt}{-30pt}{8pt}
+\titlespacing*{\section}{\parindent}{*4}{*4}
+\titlespacing*{\subsection}{\parindent}{*4}{*4}
+
+% Маркировка для списков
+\def\labelitemi{$\circ$}
+\def\labelitemii{$*$}
+
+
+\usepackage{setspace}
+\onehalfspacing % Полуторный интервал
+
+\frenchspacing
+\usepackage{indentfirst} % Красная строка
+
+\usepackage{titlesec}
+\usepackage{xcolor}
+% Названия глав
+\titleformat{\section}{\normalsize\textmd}{\thesection}{1em}{}
+
+\definecolor{gray35}{gray}{0.35}
+
+\newcommand{\hsp}{\hspace{20pt}} % длина линии в 20pt
+
+\titleformat{\chapter}[hang]{\Huge}{\textcolor{gray35}{\thechapter.}\hsp}{0pt}{\Huge\textmd}
+
+\titleformat{\section}{\Large}{\textcolor{gray35}\thesection}{20pt}{\Large\textmd}
+\titleformat{\subsection}{\Large}{\thesubsection}{20pt}{\Large\textmd}
+\titleformat{\subsubsection}{\normalfont\textmd}{}{0pt}{}
+
+% Настройки введения
+
+\addtocontents{toc}{\setcounter{tocdepth}{2}}
+\addtocontents{toc}{\setcounter{secnumdepth}{1}}
+
+\usepackage{tocloft,lipsum,pgffor}
+
+\addtocontents{toc}{~\hfill\textnormal{Страница}\par}
+
+\renewcommand{\cftpartfont}{\normalfont\textmd}
+
+\addto\captionsrussian{\renewcommand{\contentsname}{Содержание}}
+\renewcommand{\cfttoctitlefont}{\Huge\textmd}
+
+\renewcommand{\cftchapfont}{\normalfont\normalsize}
+\renewcommand{\cftsecfont}{\normalfont\normalsize}
+\renewcommand{\cftsubsecfont}{\normalfont\normalsize}
+\renewcommand{\cftsubsubsecfont}{\normalfont\normalsize}
+
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
+
+\usepackage{listings}
+\usepackage{xcolor}
+
+\bibliographystyle{utf8gost705u.bst}
+\usepackage[backend=biber,
+sorting=none,
+]{biblatex} 
+
+\addbibresource{ref-lib.bib} % База библиографии
+
+\usepackage[pdftex]{hyperref} % Гиперссылки
+\hypersetup{hidelinks}
+
+% Листинги 
+\usepackage{listings}
+
+\definecolor{darkgray}{gray}{0.15}
+
+\definecolor{teal}{rgb}{0.25,0.88,0.73}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{b-red}{rgb}{0.88,0.25,0.41}
+\definecolor{royal-blue}{rgb}{0.25,0.41,0.88}
+
+\usepackage{listings-golang}
+\lstset{
+	aboveskip=3mm,
+	belowskip=3mm,
+	frame=tb,
+	frame=single,
+	basicstyle=\footnotesize\ttfamily,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{royal-blue},
+	commentstyle=\color{gray35},
+	stringstyle=\color{b-red},
+	numbers=left,
+	numbersep=5pt,
+	numberstyle=\tiny,
+	showstringspaces=false, 
+	captionpos=t,
+	tabsize=4,
+	language=Golang
+}
+
+% какой то сложный кусок со стак эксчейндж для квадратных скобок
+\makeatletter
+\newenvironment{sqcases}{%
+	\matrix@check\sqcases\env@sqcases
+}{%
+	\endarray\right.%
+}
+\def\env@sqcases{%
+	\let\@ifnextchar\new@ifnextchar
+	\left\lbrack
+	\def\arraystretch{1.2}%
+	\array{@{}l@{\quad}l@{}}%
+}
+\makeatother
+
+% и для матриц
+\makeatletter
+\renewcommand*\env@matrix[1][\arraystretch]{%
+	\edef\arraystretch{#1}%
+	\hskip -\arraycolsep
+	\let\@ifnextchar\new@ifnextchar
+	\array{*\c@MaxMatrixCols c}}
+\makeatother
