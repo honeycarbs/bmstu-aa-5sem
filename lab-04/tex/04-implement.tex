@@ -1,0 +1,230 @@
+\chapter{Технологический раздел}\label{sec:impl}
+
+\section{Требования к ПО}
+
+Программное обеспечение должно удовлетворять следующим требованиям:
+\begin{itemize}
+	\item ПО получает на вход текстовый файл с бинарным лабиринтом размером не превышающим $1000 \times 1000$;
+	\item ПО предоставляет пользователю введенный лабиринт, в котором обозначено найденное минимальное расстояние.
+\end{itemize}
+
+\section{Средства реализации} 
+В качестве языка, на котором будет реализовано программное обеспечение, был выбран язык C++. Выбор языка обусловлен тем, что стандартная библиотека языка имеет существующую реализацию очереди\cite{queue++} и реализацию работы с нативными потоками\cite{threads++}.
+\section{Листинги кода}
+Листинг и \ref{lst:sync-wrap} и \ref{lst:par-wrap} демонстрируют функции -- обертки над функцией, выполняющей непосредственно сам поиск в ширину. 
+\captionsetup{singlelinecheck = false, justification=raggedright}
+\begin{lstlisting}[label=lst:sync-wrap,caption=функция - обретка синхронного алгоритма Ли]
+int leeRootSync(Map &map, const coord_t &src, coord_t &dest) {
+	CQueue queue;
+	queue.push({src, 0});
+	
+	bool f = false;
+	parallelRoutine(queue, map, dest, f);
+	return map.getSlot(dest);
+}
+\end{lstlisting}
+
+\begin{lstlisting}[label=lst:par-wrap,caption=функция - обретка параллельного алгоритма Ли]
+int leeRootParallel(Map &map, const coord_t &src, coord_t &dest,
+				    int thread_count) {
+	CQueue queue;
+	
+	queue.push({src, 0});
+	std::vector<std::thread> threads;
+	bool path_found = false;
+	threads.reserve(thread_count);
+	for (int i = 0; i < thread_count; i++) {
+		threads.emplace_back(
+		std::thread(parallelRoutine, std::ref(queue), std::ref(map),
+					dest, std::ref(path_found)));
+	}
+	for (int i = 0; i < thread_count; i++) {
+		threads[i].join();
+	}
+	return map.getSlot(dest);
+}
+\end{lstlisting}
+Функция - обертка над распараллеленным алгоритмом включает в себя создание потоков. Сама функция, выполняющая двоичный поиск, представлена в листинге \ref{lst:bfs}.
+\begin{lstlisting}[label=lst:bfs,caption=поиск в ширину]
+void parallelRoutine(CQueue &queue, Map &map, coord_t dest,
+					 bool &path_found) {
+	while (true) {
+		if (path_found) {
+			if (queue.size() == 0) {
+				return;
+			}
+			path_found = false;
+		}
+		auto opt = queue.pop();
+		if (!opt)
+		continue;
+		
+		auto pair = *opt;
+		auto coord = pair.first;
+		auto val = pair.second + 1;
+		if (pair.first == dest) {
+			map.setSlot(pair.first, pair.second);
+			continue;
+		}
+		if (!checkCoord(map, coord, val)) {
+			if (queue.size() == 0) {
+				path_found = true;
+			}
+			continue;
+		}
+		
+		map.setSlot(pair.first, pair.second);
+		
+		std::initializer_list<std::pair<coord_t, int>> list = {
+			{{coord.first + 1, coord.second}, val},
+			{{coord.first - 1, coord.second}, val},
+			{{coord.first, coord.second + 1}, val},
+			{{coord.first, coord.second - 1}, val}};
+		queue.push(list);
+	}
+}
+\end{lstlisting}
+
+Граф - лабиринт представлен в качестве матрицы, представленной на листингах \ref{lst:matrix} и \ref{lst:matrix-header}.
+\begin{lstlisting}[label=lst:matrix-header,caption=Класс матрицы - бинарного лабиринта]
+using coord_t = std::pair<int, int>;
+using CQueue = PQueue<std::pair<coord_t, int>>;
+
+class Map {
+	public:
+	const int WALL = -2;
+	const int UNSEEN = -1;
+	
+	explicit Map(std::string filename);
+	int getSlot(int x, int y);
+	int getSlot(std::pair<int, int> c);
+	void setSlot(int x, int y, int state);
+	void setSlot(std::pair<int, int> c, int state);
+	void outputStdput();
+	void clear();
+	
+	long width() { return width_; };
+	long height() { return height_; };
+	
+	private:
+	long width_;
+	long height_;
+	std::vector<std::vector<int>> slots_;
+	std::mutex mutex_;
+};
+\end{lstlisting}
+~\newline
+
+\begin{lstlisting}[label=lst:matrix,caption=Реализация класса матрицы - бинарного лабиринта]
+int Map::getSlot(int x, int y) {
+	if (x < 0 || y < 0 || x >= width_ || y >= height_)
+	return WALL;
+	std::lock_guard<std::mutex> guard(mutex_);
+	return slots_[x][y];
+}
+int Map::getSlot(std::pair<int, int> c) {
+	return getSlot(c.first, c.second);
+}
+
+void Map::setSlot(int x, int y, int state) {
+	if (x < 0 || y < 0 || x > width_ || y >= height_)
+	throw std::exception();
+	
+	std::lock_guard<std::mutex> guard(mutex_);
+	slots_[x][y] = state;
+}
+
+void Map::setSlot(std::pair<int, int> c, int state) {
+	this->setSlot(c.first, c.second, state);
+}
+\end{lstlisting}
+
+Реализация очереди, безопасной для распараллеливания, вводится оберткой очереди в класс и инкапсулированием мьютекса, что видно на листинге \ref{lst:queue}.
+
+ \begin{lstlisting}[label=lst:queue,caption=Шаблонный класс очереди]
+template<typename T>
+class PQueue {
+	public:
+	PQueue() = default;
+	PQueue(const PQueue<T> &) = delete ;
+	PQueue& operator=(const PQueue<T> &) = delete ;
+	
+	virtual ~PQueue() = default;
+	
+	unsigned long size() const {
+		std::lock_guard<std::mutex> lock(mutex_);
+		return queue_.size();
+	}
+	
+	std::optional<T> pop() {
+		std::lock_guard<std::mutex> lock(mutex_);
+		if (queue_.empty()) {
+			return {};
+		}
+		_i++;
+		T tmp;
+		if (_i % 2) {
+		tmp = queue_.front();
+		queue_.pop_front();
+	}
+	else {
+		tmp = queue_.back();
+		queue_.pop_back();
+	}
+	return tmp;
+}
+
+void push(const T &item) {
+	std::lock_guard<std::mutex> lock(mutex_);
+	
+	queue_.push_back(item);
+}
+
+template<class P>
+void push(const P &list) {
+	std::lock_guard<std::mutex> lock(mutex_);
+	for (auto &item: list) {
+		queue_.push_front(item);
+	}
+}
+
+private:
+	int _i = 0;
+	std::list<T> queue_;
+	mutable std::mutex mutex_;
+	
+	bool empty() const {
+		return queue_.empty();
+}
+};
+ \end{lstlisting}
+
+
+\captionsetup{singlelinecheck = false, justification=raggedleft}
+\section{Тестирование ПО}
+\begin{table}[H]
+	\renewcommand{\arraystretch}{1.9}
+	\caption{Тестовые случаи}
+	\resizebox{\textwidth}{!}{
+		\begin{tabular}{||c|c|c|c|c|c|c||}
+			\hline
+			\multirow{2}{*}{№} & \multirow{2}{*}{Матрица} & \multirow{2}{*}{Вход} & \multirow{2}{*}{Выход} & \multirow{2}{*}{Результирующая матрица} & \multicolumn{2}{c||}{Ответ} \\ \cline{6-7} 
+			&  &  &  &  & Параллельный & Синхронный \\ \hline\hline
+			1 & \begin{tabular}[c]{@{}l@{}}$\begin{matrix}[.5]\\   1 & 0 & 1 & 1 & 1 \\\\   1 & 0 & 0 & 1 & 1 \\\\   1 & 1 & 0 & 0 & 1 \\\\   1 & 0 & 0 & 1 & 1 \\\\   1 & 1 & 0 & 1 & 1\\ \end{matrix}$\end{tabular} & 0 1 & 4 3 & \begin{tabular}[c]{@{}l@{}}$\begin{matrix}[.5]\\     -2 &  0 & -2 & -2 & -2 \\\\     -2 &  1 &  2 & -2 & -2 \\\\     -2 & -2 &  3 &  4 & -2 \\\\     -2 &  5 &  4 & -2 & -2 \\\\     -2 & -2 &  5 &  6 & -2\\ \end{matrix}$\end{tabular} & 6 & 6 \\ \hline
+			2 & \begin{tabular}[c]{@{}l@{}}$\begin{matrix}[.5]\\   0 & 0 & 0 & 0 & 0 \\\\   0 & 0 & 0 & 0 & 0 \\\\   0 & 0 & 0 & 0 & 0 \\\\   0 & 0 & 0 & 0 & 0 \\\\   0 & 0 & 0 & 0 & 0\\ \end{matrix}$\end{tabular} & 0 1 & 4 3 & \begin{tabular}[c]{@{}l@{}}$\begin{matrix}[.5]\\     1 & 0 & 1 & 2 & 3 \\\\     2 & 1 & 2 & 3 & 4 \\\\     3 & 2 & 3 & 4 & 5 \\\\     4 & 3 & 4 & 5 & 6 \\\\     5 & 4 & 5 & 6 & 7\\ \end{matrix}$\end{tabular} & 6 & 6 \\ \hline
+			3 & 0 & 0 0 & 0 0 & 0 & 0 & 0 \\ \hline
+			4 & \begin{tabular}[c]{@{}l@{}}$\begin{matrix}[.5]\\   1 & 1 & 1 & 1 & 1 \\\\   1 & 1 & 1 & 1 & 1 \\\\   1 & 1 & 1 & 1 & 1 \\\\   1 & 1 & 1 & 1 & 1 \\\\   1 & 1 & 1 & 1 & 1\\ \end{matrix}$\end{tabular} & 0 1 & 4 3 & \begin{tabular}[c]{@{}l@{}}$\begin{matrix}[.5]\\ -2 &-2 &-2 &-2 &-2 \\\\ -2 &-2 &-2 &-2 &-2 \\\\ -2 &-2 &-2 &-2 &-2 \\\\ -2 &-2 &-2 &-2 &-2 \\\\ -2 &-2 &-2 &-2 &-2 \\ \end{matrix}$\end{tabular} & 0 & 0 \\ \hline
+		\end{tabular}
+	}
+	\label{table:testing}
+\end{table}
+
+\section{Вывод}
+Было написано и протестировано программное обеспечение для решения поставленной задачи.
+%$\begin{matrix}
+%	-2 &  0 & -2 & -2 & -2 \\
+%	-2 &  1 &  2 & -2 & -2 \\
+%	-2 & -2 &  3 &  4 & -2 \\
+%	-2 &  5 &  4 & -2 & -2 \\
+%	-2 & -2 &  5 &  6 & -2
+%\end{matrix}$

@@ -1,0 +1,138 @@
+\chapter{Исследовательский раздел}\label{sec:exp}
+
+\section{Технические характеристики}
+
+Тестирование выполнялось на устройстве со следующими техническими характеристиками:
+\begin{itemize}
+	\item Операционная система Ubuntu 20.04.1 LTS;
+	\item Память 7 GiB
+	\item Процессор Intel(R) Core(TM) i3-8145U CPU @ 2.10GHz \cite{intel}
+	\item Процессор имеет 4 ядра.
+\end{itemize}
+Во время тестирования устройство было подключено к блоку питания и не нагружено никакими приложениями, кроме встроенных приложений окружения, окружением и системой тестирования.
+
+\section{Описание системы тестирования}
+Замеры времени осуществлялись с помощью утилиты $std::chrono::system_clock::now()$ следующим образом:
+\captionsetup{singlelinecheck = false, justification=raggedright}
+\begin{lstlisting}[label=time,caption=Замеры времени]
+    nowP = std::chrono::system_clock::now();
+	for (int i = 0; i < 10; i++) {
+		map.clear();
+		result = leeRootParallel(map, start, finish, 5);
+	}
+	endP = std::chrono::system_clock::now();
+	nanosecondsP = std::chrono::duration_cast
+					<std::chrono::nanoseconds>(endP - nowP);
+\end{lstlisting}
+\section{Таблица времени выполнения алгоритмов}
+\captionsetup{singlelinecheck = false, justification=raggedleft}
+
+Результаты тестирования приведены в таблице \ref{tab:time}. 
+
+\begin{table}[H]
+	\centering
+	\caption{Заметы времени}
+	\renewcommand{\arraystretch}{1.7}
+ 	\begin{adjustbox}{max width=\textwidth}
+ 			\begin{tabular}{||l|l|l|l|l|l|l|l|l|l|l||}
+ 			\hline
+ 			\multirow{2}{*}{\begin{tabular}[c]{@{}l@{}}Размер\\ матрицы\end{tabular}} & \multirow{2}{*}{Синх.,ns.} & \multicolumn{9}{c||}{Количество потоков, ns.} \\ \cline{3-11} 
+ 			&  & 1 & 2 & 4 & 6 & 8 & 10 & 12 & 14 & 16 \\ \hline \hline
+			50 & 41.5 & 39.4 & 57.4 & 59.3 & 48.9 & 42.2 & 41.6 & 41.3 & 42.1 & 49.5 \\ 
+			100 & 488.4 & 497.9 & 629.8 & 658.4 & 545.4 & 457 & 437.8 & 400.8 & 389.7 & 376.9 \\ 
+			200 & 7747.7 & 7656.9 & 7005 & 5846.1 & 5652.7 & 4444.1 & 5253.9 & 5285.2 & 5100.6 & 5037 \\ 
+			300 & 32772.1 & 32486.1 & 20989.8 & 25498.2 & 20184.6 & 17794.7 & 16904.5 & 16289.2 & 15868.4 & 14504.4 \\ 
+			400 & 94144.1 & 92434.2 & 38105 & 40176.7 & 52950.5 & 45672.5 & 42929.1 & 40828 & 64266.4 & 59693.4 \\ 
+ 			\hline \hline
+ 		\end{tabular}
+	\end{adjustbox}
+	\label{tab:time}
+\end{table}
+
+\section{Графики функций}
+
+\begin{figure}[h!]
+	\begin{center}
+		\begin{tikzpicture}
+			\begin{axis}[
+				legend pos = north west,
+				xlabel=длина лабиринта,
+				ylabel=наносекунды,
+				minor tick num = 1,
+				grid = both,
+				major grid style = {lightgray},
+				minor grid style = {lightgray!25},
+				xtick distance = 50,
+				width = \textwidth,
+				height=0.4\textheight,]
+				
+				\addplot[
+				blue,
+				semithick,
+				mark = x,
+				mark size = 3pt,
+				thick,
+				] file {assets/g-sync.dat};
+				
+				\addplot[
+				red,
+				semithick,
+				mark = *,
+				] file {assets/g-1thread.dat};
+				
+				\legend{
+					Синхронно,
+					1 поток
+				}
+			\end{axis}
+		\end{tikzpicture}
+	\end{center}
+	\caption{Сравнение времени работы синхронной функции и параллельной при одном потоке}
+	\label{fig:1-thread}
+\end{figure}
+При запуске параллельной функции на одном потоке \ref{fig:1-thread}, синхронная функция работает, очевидно, быстрее -- это происходит за счет затрат на обеспечение реентрабельности структур очереди и матрицы а так же на выделение и уничтожение памяти под новые потоки.
+
+\begin{figure}[h!]
+	\begin{center}
+		\begin{tikzpicture}
+			\begin{axis}[
+				legend pos = north west,
+				xlabel=длина лабиринта,
+				ylabel=наносекунды,
+				minor tick num = 1,
+				width = \textwidth,
+				height=0.4\textheight,
+				grid = both,
+				major grid style = {lightgray},
+				minor grid style = {lightgray!25},
+				xtick distance = 50]
+				
+				\addplot[
+				blue,
+				semithick,
+				mark = x,
+				mark size = 3pt,
+				thick,
+				] file {assets/g-sync.dat};
+				
+				\addplot[
+				red,
+				semithick,
+				mark = *,
+				] file {assets/g-4threads.dat};
+				
+				\legend{
+					Синхронно,
+					4 потока
+				}
+			\end{axis}
+		\end{tikzpicture}
+	\end{center}
+	\caption{Сравнение времени работы синхронной функции и параллельной при одном потоке}
+	\label{fig:4-threads}
+\end{figure}
+При работе алгоритма на количестве потоков, равном количеству логических ядер ЭВМ, на котором проводилось тестирование, с ростом размерности матрицы виден ощутимый прирост(рисунок \ref{fig:4-threads}) примерно в $\frac{2}{3}$ на самой большой матрице из тестируемых.
+
+\section{Вывод}\label{sec:exp-sum}
+Работа с очередью требует использования атомарных операций добавления и удаления вершин в
+очередь, что на практике может быть источником большого количества накладных расходов. Параллельный алгоритм показывает существенный прирост на таких матрицах, где расходы на эти операции перекрываются трудоемкостью обработки. Соответственно, нативная оптимизация поиска в ширину показывает лучшие результаты на больших объемах данных. Такая оптимизация может получить применение, например, в стратегических играх.
