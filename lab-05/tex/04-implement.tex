@@ -1,0 +1,329 @@
+\chapter{Технологический раздел}\label{sec:impl}
+Раздел содержит требования к реализованному программному обеспечению, листинги кода и результаты рестирования программного обеспечения. 
+\section{Требования к ПО}
+
+Программное обеспечение должно удовлетворять следующим требованиям:
+\begin{itemize}
+	\item программа получает на вход размер очереди;
+	\item программа выдает журналирование работы конвейера;
+	\item генератор подстрок выдает ненулевые строки, состоящие из строчных и заглавных символов;
+	\item подстрока, которую выдает генератор подстрок, должна содержаться в исходной строке.
+\end{itemize}
+
+\section{Средства реализации} 
+
+Для реализации ПО был выбран компилируемый многопоточный язык программирования Golang, поскольку язык отличается легкой и быстрой сборкой программ и автоматическим управлением памяти.
+В качестве среды разработки была выбрана среда VS Code, написание сценариев осуществлялось утилитой make.
+
+\section{Листинги кода}
+\subsection{Структуры и типы}
+Заявка в очереди имеет следующую структуру: (\ref{lst:type-pipe})
+\captionsetup{singlelinecheck = false, justification=raggedright}
+\begin{lstlisting}[label=lst:type-pipe,caption=Структура заявки в очереди]
+type PipeTask struct {
+	num  			int
+	generated		bool
+	skip_table_made bool
+	pattern_mached	bool
+	
+	start_generating time.Time
+	end_generatig    time.Time
+	start_table		 time.Time
+	end_table		 time.Time
+	start_match		 time.Time
+	end_match		 time.Time
+
+	source        []rune
+	pattern       []rune
+	skip_table    map[rune]int
+	pattern_index int
+}
+\end{lstlisting}
+Структура очереди продемонстрирована на листинге \ref{lst:queue-type}:
+\begin{lstlisting}[label=lst:queue-type,caption=Структура очереди]
+type Queue struct {
+	queue [](*PipeTask)
+	size  int
+}
+\end{lstlisting}
+\subsection{Очередь}
+Реализация очереди продемонстрирована на листинге \ref{lst:queue}.
+\begin{lstlisting}[label=lst:queue,caption=Очередь]
+func initQueue(size int) *Queue {
+	qu := new(Queue)
+	qu.queue = make([](*PipeTask), size)
+	qu.size = -1
+	
+	return qu
+}
+
+func (qu *Queue) enqueue (t *PipeTask) {
+	if (qu.size != len(qu.queue) - 1) {
+		qu.queue[qu.size + 1] = t
+		qu.size++
+	}
+}
+
+func (qu *Queue) dequeue () *PipeTask {
+	t := qu.queue[0]
+	qu.queue = qu.queue[1:]
+	qu.size--
+	return t
+}
+\end{lstlisting}
+\subsection{Реализация параллельного конвейера}
+Реализация параллельного конвейера продемонстрирована на листинге \ref{lst:pipeline}.
+\begin{lstlisting}[label=lst:pipeline,caption=Реализация параллельного конвейера]
+func Pipeline(count int, ch chan int) *Queue {
+	first := make(chan *PipeTask, count)
+	second := make(chan *PipeTask, count)
+	third := make(chan *PipeTask, count)
+	
+	line := initQueue(count)
+	
+	gen_string := func() {
+		for {
+			select {
+				case pipe_task := <-first:
+				pipe_task.generated = true
+				
+				pipe_task.start_generating = time.Now()
+				
+				pipe_task.source = bmsearch.GenerateRune(STRING_SIZE)
+				pipe_task.pattern = bmsearch.GeneratePattern(
+									pipe_task.source, PATTERN_SIZE)
+				
+				pipe_task.end_generatig = time.Now()
+				
+				second <- pipe_task
+			}
+		}
+	}
+	
+	get_table := func() {
+		for {
+			select {
+				case pipe_task := <-second:
+				pipe_task.skip_table_made = true
+				
+				pipe_task.start_table = time.Now()
+				
+				pipe_task.skip_table = bmsearch.ConstructSkipTable(
+									   pipe_task.pattern)
+				pipe_task.end_table = time.Now()
+				
+				third <- pipe_task
+			}
+		}
+	}
+	
+	match := func() {
+		for {
+			select {
+				case pipe_task := <-third:
+				pipe_task.pattern_mached = true
+				
+				pipe_task.start_match = time.Now()
+				pipe_task.pattern_index = bmsearch.FindFirstIndex(
+												pipe_task.source, 
+												pipe_task.pattern,
+												pipe_task.skip_table)
+				pipe_task.end_match = time.Now()
+				
+				line.enqueue(pipe_task)
+				if (pipe_task.num == count - 1) {
+					ch <- 0
+				}
+			}
+		}
+	}
+	go gen_string()
+	go get_table()
+	go match()
+	
+	
+	for i := 0; i < count; i++ {
+		pipe_task := new(PipeTask)
+		pipe_task.num = i + 1
+		first <- pipe_task
+	}
+	return line
+}
+\end{lstlisting}
+\subsection{Реализация синхронного конвейера}
+Процедуры, необходимые для реализации синхронного конвейера представлены на листингах \ref{lst:sync-string} --  \ref{lst:sync-match}.
+\begin{lstlisting}[label=lst:sync-string,caption=Получение подстрок]
+func gen_string_sync(task *PipeTask) *PipeTask {
+	task.generated = true
+	
+	task.start_generating = time.Now()
+	
+	task.source = bmsearch.GenerateRune(STRING_SIZE)
+	task.pattern = bmsearch.GeneratePattern(task.source, PATTERN_SIZE)
+	
+	task.end_generatig = time.Now()
+	
+	return task
+}
+\end{lstlisting}
+\begin{lstlisting}[label=lst:sync-table,caption=Получение словаря]
+func get_table_sync(task *PipeTask) *PipeTask {
+	task.skip_table_made = true
+	
+	task.start_table = time.Now()
+	task.skip_table = bmsearch.ConstructSkipTable(task.pattern)
+	task.end_table = time.Now()
+	
+	return task
+}
+\end{lstlisting}
+
+\begin{lstlisting}[label=lst:sync-match,caption=Поиск подстроки]
+func match_sync(task *PipeTask) *PipeTask {
+	task.pattern_mached = true
+	
+	task.start_match = time.Now()
+	task.pattern_index = bmsearch.FindFirstIndex(task.source, 
+								  task.pattern, task.skip_table)
+	task.end_match = time.Now()
+	
+	return task
+}
+\end{lstlisting}
+На листинге \ref{lst:sync} представлена реализация синхронного конвейера.
+\begin{lstlisting}[label=lst:sync,caption=Синхронный конвейер]
+func Sync(count int) *Queue {
+	line_first := initQueue(count)
+	line_second := initQueue(count)
+	line_third := initQueue(count)
+	
+	for i := 0; i < count; i++ {
+		pipe_task := new(PipeTask)
+		pipe_task = gen_string_sync(pipe_task)
+		line_first.enqueue(pipe_task)
+		if (len(line_first.queue) != 0) {
+			pipe_task = get_table_sync(line_first.dequeue())
+			line_second.enqueue(pipe_task)
+			if (len(line_second.queue) != 0) {
+				pipe_task = match_sync(line_second.dequeue())
+				line_third.enqueue(pipe_task)
+			}
+		}
+	}
+	return line_third
+}
+\end{lstlisting}
+
+\subsection{Поиск подстроки}
+Реализация получения словаря вида символ - сдвиг представлена на листинге \ref{lst:table}.
+\begin{lstlisting}[label=lst:table,caption=Получение словаря вида символ - сдвиг]
+func ConstructSkipTable(pattern []rune) map[rune]int {
+	length := len(pattern)
+	skips := make(map[rune]int)
+	for i, char := range pattern {
+		if i < length - 1 {
+			skips[char] = length - i - 1
+		} else {
+			skips[char] = length
+		}
+	}
+	return skips
+}
+\end{lstlisting}
+
+Генерация строк и подстрок представлена на листинге \ref{lst:generate}. Реализация алгоритма Бойера -- Мура -- Хорспула представлена на листинге \ref{lst:search}.
+\begin{lstlisting}[label=lst:generate,caption=Генерация строк и подстрок]
+	func GenerateRune(size int) []rune {
+		var letters = []rune("abcdefghijklmnopqrstuvwxyz
+							  ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+		rand.Seed(time.Now().UnixNano())
+		b := make([]rune, size)
+		for i := range b {
+			b[i] = letters[rand.Intn(len(letters))]
+		}
+		return b
+	}
+	func GeneratePattern(src []rune, size int) []rune {
+		rand.Seed(time.Now().UnixNano())
+		start := rand.Intn(len(src) - size)
+		length := len(src)
+		
+		return src[start : length - 1]
+	}
+\end{lstlisting}
+
+\begin{lstlisting}[label=lst:search,caption=Алгоритм Бойера -- Мура -- Хорспула]
+func FindFirstIndex(source, pattern []rune, skips map[rune]int) int {
+	len_ptrn := len(pattern)
+	len_src := len(source)
+	
+	j := len_ptrn - 1
+	for j < len_src {
+		k := j
+		i := len_ptrn - 1
+		for i >= 0 {
+			if source[k] != pattern[i] {
+				if skip, found := skips[source[j]]; found {
+					j += skip
+				} else {
+					j += len_ptrn
+				}
+				break
+			}
+			k--
+			i--
+		}
+		if i < 0 {
+			return k + 1
+		}
+	}
+	return -1
+}
+\end{lstlisting}
+
+\section{Тестирование ПО}
+Тестирование ПО проводилось написанием журналирования для вывода содержания заявок очереди(\ref{lst:testing}).
+\begin{lstlisting}[label=lst:testing,caption=Тестирование ПО]
+func print_map(m map[rune]int) {
+	fmt.Print("( ")
+	for i, ch := range m {
+		fmt.Printf("%c:%v ", i, ch)
+	}
+	fmt.Print(") \\\\ \n")
+}
+
+func Log(qu *Queue) {
+	fmt.Println("")
+	line := qu.queue
+	for i := range line {
+		if line[i] != nil {
+			fmt.Printf("%3v & %12v & %10v & ", i, 
+			string(line[i].source),
+			string(line[i].pattern))
+			print_map(line[i].skip_table)
+			fmt.Printf(" & %v \\\\ \n", line[i].pattern_index)
+		}
+	}
+}
+\end{lstlisting}
+На очереди размером в 5 элементов программа показала следующие результаты(\ref{table:testing}):
+\begin{table}[H]
+	\captionsetup{singlelinecheck = false, justification=raggedleft}
+	\renewcommand{\arraystretch}{1.8}
+	\caption{Тестирование ПО}
+	\resizebox{\textwidth}{!}{
+	\begin{tabular}{||c|c|c|c|l|c||}
+		\hline
+		№ & Строка & Подстрока & Присутствие & Словарь & Результат\\ \hline
+			1 &   MeHJWZigCQ &  MeHJWZigC & + &  ( W:4 g:1 C:9 e:7 H:6 J:5 M:8 Z:3 i:2  & 0 \\ 
+			2 &   quOFEdkUfL &   uOFEdkUf & + &  ( E:4 d:3 k:2 U:1 f:8 u:7 O:6 F:5  & 1 \\ 
+			3 &   XKkbxZMRku &     bxZMRk & + &  ( R:1 k:6 b:5 x:4 Z:3 M:2  & 3 \\ 
+			4 &   SyHEexBMWH &   yHEexBMW & + &  ( x:3 B:2 M:1 W:8 y:7 H:6 E:5 e:4  & 1 \\ 
+			5 &   bXbEVQAUEZ &  bXbEVQAUE & + &  ( E:9 V:4 Q:3 A:2 U:1 b:6 X:7  & 0 \\ \hline
+	\end{tabular}
+	}
+	\label{table:testing}
+\end{table}
+
+\section{Вывод}
+Было написано и протестировано программное обеспечение для решения поставленной задачи. 

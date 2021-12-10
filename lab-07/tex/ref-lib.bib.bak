@@ -1,0 +1,33 @@
+% Encoding: UTF-8
+
+@Book{ling,
+  author = {Ефремова Н.Э., Клышинский Э.С.},
+  title  = {Автоматическая обработка текстов на естественном языке и анализ данных},
+}
+
+@Book{knuth,
+  author    = {Кнут Д. Э},
+  publisher = {Вильямс},
+  title     = {Искусство программирования. Том 3. Сортировка и поиск.},
+  year      = {2001},
+}
+
+@Online{go,
+  title   = {Go},
+  url     = {https://go.dev/},
+  urldate = {2021-11-26},
+}
+
+@Online{intel,
+  title   = {Intel® Core™ i3-8145U},
+  url     = {https://ark.intel.com/content/www/ru/ru/ark/products/149090/intel-core-i3-8145u-processor-4m-cache-up-to-3-90-ghz.html},
+  urldate = {2021-11-26},
+}
+
+@Online{wordstat,
+  title   = {English Letter Frequency Counts},
+  url     = {http://norvig.com/mayzner.html},
+  urldate = {2021-11-26},
+}
+
+@Comment{jabref-meta: databaseType:bibtex;}

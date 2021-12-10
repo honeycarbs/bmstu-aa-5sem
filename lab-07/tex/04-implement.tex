@@ -1,0 +1,152 @@
+\chapter{Технологический раздел}\label{sec:impl}
+
+Раздел содержит листинги реализованных алгоритмов, требование к ПО
+и тестирование реализованного программного обеспечения.
+
+\section{Требования к ПО}
+Программное обеспечение должно удовлетворять следующим требованиям:
+\begin{itemize}
+	\item программа получает на вход имя текстового файла со словарем и искомый ключ;
+	\item программа выдает значение по искомому ключу. Если ключа в словаре не нашлось, программа выдает текстовую строку \textit{NOT FOUND}.
+\end{itemize}
+
+\section{Средства реализации} 
+Для реализации ПО был выбран компилируемый многопоточный язык программирования Golang\cite{go}, поскольку язык отличается автоматическим управлением памяти. В качестве среды разработки была выбрана среда VS Code, написание сценариев осуществлялось утилитой make.
+\section{Листинги кода}
+
+Листинг \ref{lst:types} демонстрирует реализацию типа <<словарь>> и <<сегментированный словарь>>. Словарь содержит пары значений, описанных структурой <<Entry>>. \\ \\ \\
+ 
+\captionsetup{singlelinecheck = false, justification=raggedright}
+\begin{lstlisting}[label=lst:types,caption=Структуры данных]
+type Entry struct {
+	Key   string
+	Value int
+}
+
+type Dictionary struct {
+	Size    int
+	entries []Entry
+}
+
+type SgtDictionary struct {
+	Size    int
+	dicts   []Dictionary
+}
+\end{lstlisting}
+Листинг \ref{lst:brute} демонстрирует реализацию алгоритма полного перебора.
+\captionsetup{singlelinecheck = false, justification=raggedright}
+\begin{lstlisting}[label=lst:brute,caption=Полный перебор]
+func (dct Dictionary) BruteForce(skey string) (int, int, error) {
+	compars := 0
+	
+	for _, entry := range(dct.entries) {
+		compars++;
+		if (entry.Key == skey) {
+			return entry.Value, compars, nil;
+		}
+	}
+	return 0, compars, errors.New("NOT FOUND")
+}
+\end{lstlisting}
+
+Функция \ref{lst:bin-wrap} является <<оберткой>> для бинарного поиска, вызываемой из пользовательского интерфейса:
+
+\begin{lstlisting}[label=lst:bin-wrap,caption=Бинарный поиск(функция - обертка)]
+func (dct Dictionary) BinarySearch(skey string) (int, int, error) {
+	dct.sortAlphab()
+	
+	r, compars, err := dct.__binaryHelper(skey)
+	return r, compars, err
+}
+\end{lstlisting}
+
+Сам бинарный поиск осуществляет функция, демонстрируемая на листинге \ref{lst:bin}. \\
+
+\begin{lstlisting}[label=lst:bin,caption=Бинарный поиск]
+func (dct Dictionary) __binaryHelper(skey string) 
+					 (result int, compars int, err error) {
+	var (
+		high    int = len(dct.entries)
+		mid     int = high / 2
+	)
+	switch {
+		case high == 0:
+		result = 0
+		err    = errors.New("NOT FOUND")
+		case dct.entries[mid].Key > skey:
+		dct.entries = dct.entries[:mid]
+		result, compars, err = dct.__binaryHelper(skey)
+		case dct.entries[mid].Key < skey:
+		dct.entries = dct.entries[mid + 1:]
+		result, compars, err = dct.__binaryHelper(skey)
+		default:
+		result = dct.entries[mid].Value
+	}
+	compars++
+	return
+}
+\end{lstlisting}
+
+Поиск в сегментированном словаре осуществляется с помощью функции, представленной на листинге \ref{lst:seg-bin}.
+
+\begin{lstlisting}[label=lst:seg-bin,caption=Бинарный поиск в сегментированном словаре]
+func (dct Dictionary) SectionedBinary(skey string) (int, int, error) {
+	var (
+		sec_compars int = 0
+		sletter byte = skey[0]
+		rvalue  int
+		err     error
+		compars int
+	)
+	sdct := dct.SegmentByAlphabet()
+	rvalue = 0
+	for _, d := range sdct.dicts {
+		sec_compars++
+		if sletter == d.entries[0].Key[0] {
+			rvalue, compars, err = d.BinarySearch(skey)
+			break
+		}
+	}	
+	return rvalue, compars + sec_compars, err
+}
+\end{lstlisting}
+
+\section{Тестирование ПО}
+%Результаты тестирования ПО приведены в таблице \ref{table:testing}. 
+%\begin{table}[H]
+%	\captionsetup{singlelinecheck = false, justification=raggedleft}
+%	\caption{Тестирование ПО}
+%	\renewcommand{\arraystretch}{2}
+%	\begin{center}
+%		\begin{tabular}{||c|c|c||}
+%			\hline
+%			Входные данные & Результат  & Ожидаемый результат \\ \hline\hline
+%			peps           & 1          & 1                   \\ \hline
+%			warmth         & 1          & 1                   \\ \hline
+%			robust         & 1          & 1                   \\ \hline
+%			zachetpoAA     & NOT\_FOUND & NOT\_FOUND          \\ \hline
+%		\end{tabular}
+%	\end{center}
+%	\label{table:testing}
+%\end{table}
+
+Результаты тестирования ПО приведены в таблице \ref{table:testing}. 
+\begin{table}[H]
+	\captionsetup{singlelinecheck = false, justification=raggedleft}
+	\caption{Тестирование ПО}
+	\renewcommand{\arraystretch}{2}
+	\begin{center}
+		\begin{tabular}{||c|c|c||}
+			\hline
+			Входные данные & Результат  & Ожидаемый результат \\ \hline\hline
+			wanna          & 1          & 1                   \\ \hline
+			grab           & 1          & 1                   \\ \hline
+			coffee         & -1          & -1                   \\ \hline
+			wednesday?    & NOT FOUND & NOT FOUND          \\ \hline
+		\end{tabular}
+	\end{center}
+	\label{table:testing}
+\end{table}
+
+\section{Вывод}
+Было написано и протестировано программное обеспечение для решения поставленной задачи.

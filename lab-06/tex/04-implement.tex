@@ -1,0 +1,362 @@
+\chapter{Технологический раздел}\label{sec:impl}
+
+Раздел содержит листинги реализованных алгоритмов, требование к ПО и тестирование реализованного программного обеспечения. Также раздел включает в себя описание системы автоматической параметризации.
+
+\section{Требования к ПО}
+
+Программное обеспечение должно удовлетворять следующим требованиям:
+\begin{itemize}
+	\item программа принимает на вход количество дней, симметричную матрицу смежности графа и регулируемые параметры;
+	\item программа выдает массив кратчайших путей, выходящих из каждой вершины графа.
+\end{itemize}
+
+\section{Средства реализации} 
+Для реализации ПО был выбран компилируемый многопоточный язык программирования Golang, поскольку язык отличается легкой и быстрой сборкой программ и автоматическим управлением памяти.
+В качестве среды разработки была выбрана среда VS Code, написание сценариев осуществлялось утилитой make.
+Скрипты для автоматизации были написаны на языке python.
+
+\section{Листинги кода}
+
+\subsection{Муравьиный алгоритм}
+
+Листинг \ref{lst:types} демонстрирует типы данных для алгоритма муравьиной колонии.
+
+\captionsetup{singlelinecheck = false, justification=raggedright}
+\begin{lstlisting}[label=lst:types,caption=Структуры данных]
+type Ant struct {
+	colony  *Colony
+	tour     [][]int
+	memory   [][]bool
+	position int
+	start    int
+}
+type Colony struct {
+	gr_matrix    [][]int
+	phero_matrix [][]float64
+	iters        int
+	conf         Config
+}
+type Config struct {
+	TRACE_WEIGHT float64 // alpha
+	TOUR_VISIB   float64 // beta
+	EVAP_RATE    float64 // p
+	Q        	 float64 // q
+	PHERO_INIT   float64 // start pheromone conc
+	PHERO_EPS    float64
+}
+\end{lstlisting}
+
+Листинг \ref{lst:colony-init} демонстрирует аллокацию структуры муравьиной колонии.
+\begin{lstlisting}[label=lst:colony-init,caption=Аллокация колонии]
+func makeColony(gr_matrix [][]int, iters int, 
+				conf_filename string) *Colony {
+	colony := new(Colony)
+	conf := ParceConfigFile(conf_filename)
+	if (conf == nil) {
+		return nil
+	} 
+	colony.conf = *conf
+
+	colony.gr_matrix = gr_matrix
+	colony.iters = iters
+	colony.phero_matrix = make([][]float64, len(colony.gr_matrix))
+	
+	for i := 0; i < len(colony.gr_matrix); i++ {
+		colony.phero_matrix[i] = make([]float64, len(colony.gr_matrix[i]))
+		for j := range colony.phero_matrix[i] {
+			colony.phero_matrix[i][j] = colony.conf.PHERO_INIT
+		}
+	}
+	return colony
+}
+\end{lstlisting}
+
+Листинг \ref{lst:place-ant} демонстрирует размещение муравья на точке в графе.
+\begin{lstlisting}[label=lst:place-ant,caption=Размещение мурвья]
+func (col *Colony) placeAnt(start int) *Ant {
+	ant := new(Ant)
+	ant.colony   = col
+	ant.tour     = make([][]int, len(col.gr_matrix))
+	ant.memory   = make([][]bool, len(col.gr_matrix))
+	ant.position = start
+	ant.start    = start
+	
+	for i := range col.gr_matrix {
+		ant.tour[i] = make([]int, len(col.gr_matrix[i]))
+		copy(ant.tour[i], col.gr_matrix[i])
+	}
+
+	for i := range ant.memory {
+		ant.memory[i] = make([]bool, len(col.gr_matrix))
+	}
+	return ant
+}
+\end{lstlisting}
+
+Пользователь взаимодействует с функцией, продемонстрированной на листинге \ref{lst:wrap}.
+\begin{lstlisting}[label=lst:wrap,caption=Алгоритм муравьиной колонии]
+func ACOWrapper(gr_matrix [][]int, iters int, 
+				conf_filename string) *[]int {
+	shortest := make([]int, len(gr_matrix))
+	colony := makeColony(gr_matrix, iters, conf_filename)
+	if (colony == nil) {
+		return nil
+	}
+	
+	for i := 0; i < colony.iters; i++ {
+		for j := 0; j < len(colony.gr_matrix); j++ {
+			ant := colony.placeAnt(j)
+			ant.startTour()
+			current := ant.tourLength()
+			
+			if current < shortest[j] || shortest[j] == 0 {
+				shortest[j] = current
+			}
+		}
+	}
+	return &shortest
+}
+\end{lstlisting}
+Начало перемещения муравья по графу происходит согласно функции \ref{lst:ant-start}:
+
+\begin{lstlisting}[label=lst:ant-start,caption=Перемещение муравья по графу]
+func (ant *Ant) startTour() {
+	next := -1
+	
+	for flag := true; flag; flag = (next != -1) {
+		vis := ant.getVision()
+		
+		next = fortuneWheel(vis)
+		
+		if (next != -1) {
+			ant.tourAnt(next)
+			ant.updatePhTrace()	
+		}
+	} 
+}
+\end{lstlisting}
+
+Вероятностный массив, полученный согласно правилу \ref{ant-prob}, вычисляется в следующей функции(\ref{lst:prob})
+\begin{lstlisting}[label=lst:prob,caption=Получение массива зрения для муравья]
+func (ant *Ant) getVision() []float64 {
+	var (
+	vis = make([]float64, 0)
+	denom = 0.0
+	)
+	
+	for i, l := range ant.tour[ant.position] {
+		if l != 0 {
+			term := math.Pow((1.0 / float64(l)), 
+			ant.colony.conf.TRACE_WEIGHT) * math.Pow
+			(ant.colony.phero_matrix[ant.position][i], 
+			ant.colony.conf.TOUR_VISIB)
+			
+			denom += term
+			vis = append(vis, term)
+		} else {
+			vis = append(vis, 0)
+		}
+	}
+	
+	for i := 0; i < len(vis); i++ {
+		vis[i] /= denom
+	}
+	return vis
+}	
+\end{lstlisting}
+Листинг \ref{lst:ant-wheel} демонстрирует метод выбора следующего города.
+\begin{lstlisting}[label=lst:ant-wheel,caption=Выбор следующего города]
+func fortuneWheel(vis []float64) int {
+	var (
+	cumul_sum = make([]float64, len(vis))
+	coin = rand.New(rand.NewSource(time.Now().UnixNano())).Float64()
+	chosen = -1
+	)
+	
+	for i := 0; i < len(vis); i++ {
+		for j := i; j < len(vis); j++ {
+			cumul_sum[i] += vis[j]
+		}
+	}
+
+	for i := 0; i < len(cumul_sum); i++ {
+		if i == len(cumul_sum) - 1 {
+			if 0.0 <= coin && coin <= cumul_sum[i] {
+				chosen = i
+			}
+		} else {
+			if cumul_sum[i + 1] < coin && coin <= cumul_sum[i] {
+				chosen = i
+			}
+		}
+	}
+
+	return chosen
+}	
+\end{lstlisting}
+Поведение муравья после выбора города описано на листинге \ref{lst:ant-tour}
+\begin{lstlisting}[label=lst:ant-tour,caption=Путь муравья в следующий город]
+func (ant *Ant) tourAnt(root int) {
+	for i := range ant.tour[ant.position] {
+		ant.tour[i][ant.position] = 0
+		ant.tour[ant.position][i] = 0
+	}
+
+	ant.memory[ant.position][root] = true	
+	ant.position = root
+}
+\end{lstlisting}
+Листинг \ref{lst:phero} демонстрирует обновление феромона согласно формуле \ref{pheromone}.\newpage
+\begin{lstlisting}[label=lst:phero,caption=Обновление феромона]
+func (ant *Ant) updatePhTrace() {
+	delta := 0.0
+	
+	for i := 0; i < len(ant.colony.phero_matrix); i++ {
+		for j, phero := range ant.colony.phero_matrix[i] {
+			if ant.colony.gr_matrix[i][j] != 0 {
+				if ant.memory[i][j] {
+					delta = ant.colony.conf.Q / 
+						float64(ant.colony.gr_matrix[i][j])
+				} else {
+					delta = 0
+				}
+				ant.colony.phero_matrix[i][j] = 
+				(1 - ant.colony.conf.EVAP_RATE) * (float64(phero) + delta)
+				ant.colony.phero_matrix[j][i] = 
+				(1 - ant.colony.conf.EVAP_RATE) * (float64(phero) + delta)
+			}
+			if ant.colony.phero_matrix[i][j] <= 0 {
+				ant.colony.phero_matrix[i][j] = ant.colony.conf.PHERO_EPS
+				ant.colony.phero_matrix[j][i] = ant.colony.conf.PHERO_EPS
+			}
+		}
+	}
+}
+\end{lstlisting}
+После прохождения маршрута муравей вычисляет длину пройденного пути следующим образом (\ref{lst:len}):
+\begin{lstlisting}[label=lst:len,caption=Длина маршрута]
+func (ant *Ant) tourLength() int {
+	var (
+	length = 0
+	last   = ant.position
+	)
+	
+	for i, r := range ant.memory {
+		for root, passed := range r {
+			if passed {
+				length += ant.colony.gr_matrix[i][root]
+			}
+		}
+	}
+	length += ant.colony.gr_matrix[ant.start][last]
+	
+	return length
+}
+\end{lstlisting}
+\subsection{Алгоритм полного перебора}
+Листинг \ref{lst:brute} демонстрирует алгоритм полного перебора.
+\begin{lstlisting}[label=lst:brute,caption=]
+func BruteForce(gr_matrix [][]int) []int {
+	var (
+	roots = make([]int, 0)
+	graph_len = len(gr_matrix)
+	min_path = -1
+	)
+	for source := 0; source < graph_len; source++ {
+		cur_roots := make([]int, 0)
+		for i := 0; i < graph_len; i++ {
+			if i != source {
+				cur_roots = append(cur_roots, i)
+			}
+		}
+		next_permutation := permutations(cur_roots)
+		for _, perm := range next_permutation {
+			curr_cost := 0
+			k := source
+			
+			for _, j := range perm {
+				curr_cost += gr_matrix[k][j]
+				k = j
+			}
+			curr_cost += gr_matrix[k][source]
+			if curr_cost < min_path || min_path == -1 {
+				min_path = curr_cost
+			}
+		}
+		roots = append(roots, min_path)
+		min_path = -1
+	}
+	return roots
+}	
+\end{lstlisting}
+Получение всех перестановок происходит согласно функциям, демонстрируемым на листингах \ref{lst:prem} и \ref{lst:prem-helper}.
+\begin{lstlisting}[label=lst:prem,caption=Получение всех перестановок]
+func permutations(path []int) [][]int {
+	var res [][]int
+	__permutationHelper(path, &res, 0)
+	return res
+}
+\end{lstlisting}
+\begin{lstlisting}[label=lst:prem-helper,caption=Получение одной перестановки]
+func __permutationHelper(path []int, res *[][]int, k int) {
+	for i := k; i < len(path); i++ {
+		path[i], path[k] = path[k], path[i]
+		__permutationHelper(path, res, k + 1)
+		path[k], path[i] = path[i], path[k]
+	}
+	if (k == len(path) - 1) {
+		r := make([]int, len(path))
+		copy(r, path)
+		*res = append(*res, r)
+		return
+	}
+}	
+\end{lstlisting}
+
+\subsection{Автоматическая параметризация}
+
+скрипт автоматической перестановки генерирует все комбинации параметров в заданном диапазоне и помещает в конфигурационный файл. Функция генерации параметров имеет следующий вид (\ref{lst:script}):
+\begin{lstlisting}[label=lst:script,caption=Генерация параметров]
+def form_coefs():
+	coefs_gen = []
+	for i in range(11):
+	stack = []
+	alpha = round(0.0 + 0.1 * i, 2)
+	betta = round(1 - alpha, 2)
+	
+	stack.append([round(0.0 + 0.1 * j, 2) for j in range(11)])
+	stack.append([40])                                         # q
+	stack.append([0.1])                                        # init
+	stack.append([0.01])                                       # eps
+	cprod = list(itertools.product(*stack))
+	coefs_cur = []
+	for x in cprod:
+		x = list(x)
+		x.insert(0, alpha)
+		x.insert(1, betta)
+		coefs_cur.append(x)
+		coefs_gen.append(coefs_cur)
+	
+	return coefs_gen
+\end{lstlisting}
+
+\section{Тестирование ПО}
+Результаты тестирования ПО приведены в таблице \ref{table:testing}. 
+\begin{table}[H]
+	\centering
+	\captionsetup{singlelinecheck = false, justification=raggedleft}
+	\renewcommand{\arraystretch}{2}
+	\caption{Тестирование ПО}
+	
+	\begin{tabular}{||c|c|c||}
+		\hline
+		\textit{Матрица} & \textit{Полный перебор} & \textit{Муравьиный алгоритм} \\ \hline\hline
+		\begin{tabular}[c]{@{}c@{}}$ \begin{matrix}[.5]\\     0 & 7 & 8 & 7 & 9  \\\\     7 & 0 & 8 & 3 & 6  \\\\     8 & 8 & 0 & 8 & 6  \\\\     7 & 3 & 8 & 0 & 8  \\\\     9 & 6 & 6 & 8 & 0  \\\\ \end{matrix}  $\end{tabular} & 30 30 30 30 30 & 30 30 30 30 30 \\ \arrayrulecolor{gray35}\hline
+		\begin{tabular}[c]{@{}c@{}}$ \begin{matrix}[.5]\\ 0 & 3 & 1 & 6 & 8 \\\\ 3 & 0 & 4 & 1 & 2 \\\\ 1 & 4 & 0 & 5 & 2 \\\\ 6 & 1 & 5 & 0 & 6 \\\\ 8 & 2 & 2 & 6 & 0 \\\\ \end{matrix}  $\end{tabular} & 12 12 12 12 12 & 12 12 12 12 12 \\\arrayrulecolor{gray35}\hline
+		\begin{tabular}[c]{@{}c@{}}$ \begin{matrix}[.5]\\ 0  & 10  & 15  & 20  \\\\ 10 &  0  & 35  & 25  \\\\ 15 &  35 &  0  & 30  \\\\ 20 &  25 &  30 &  0  \\\\  \\ \end{matrix}  $\end{tabular} & 80 80 80 80 & 80 80 80 80 \\ \hline
+	\end{tabular}
+	\label{table:testing}
+\end{table}
+
+\section{Вывод}
+Было написано и протестировано программное обеспечение для решения поставленной задачи.

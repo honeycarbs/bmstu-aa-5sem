@@ -1,0 +1,117 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.1 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{none/global//global/global}
+    \entry{ling}{book}{}
+      \name{author}{1}{}{%
+        {{hash=7d83f6fca680d146b465808ef0e668f1}{%
+           family={Ефремова\bibnamedelima Н.Э.},
+           familyi={Е\bibinitperiod\bibinitdelim Н\bibinitperiod},
+           given={Клышинский\bibnamedelima Э.С.},
+           giveni={К\bibinitperiod\bibinitdelim Э\bibinitperiod}}}%
+      }
+      \strng{namehash}{7d83f6fca680d146b465808ef0e668f1}
+      \strng{fullhash}{7d83f6fca680d146b465808ef0e668f1}
+      \strng{bibnamehash}{7d83f6fca680d146b465808ef0e668f1}
+      \strng{authorbibnamehash}{7d83f6fca680d146b465808ef0e668f1}
+      \strng{authornamehash}{7d83f6fca680d146b465808ef0e668f1}
+      \strng{authorfullhash}{7d83f6fca680d146b465808ef0e668f1}
+      \field{sortinit}{1}
+      \field{sortinithash}{50c6687d7fc80f50136d75228e3c59ba}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Автоматическая обработка текстов на естественном языке и анализ данных}
+    \endentry
+    \entry{knuth}{book}{}
+      \name{author}{1}{}{%
+        {{hash=d1cd80b0af9cc41fba094e89930b5954}{%
+           family={Э},
+           familyi={Э\bibinitperiod},
+           given={Кнут\bibnamedelima Д.},
+           giveni={К\bibinitperiod\bibinitdelim Д\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Вильямс}%
+      }
+      \strng{namehash}{d1cd80b0af9cc41fba094e89930b5954}
+      \strng{fullhash}{d1cd80b0af9cc41fba094e89930b5954}
+      \strng{bibnamehash}{d1cd80b0af9cc41fba094e89930b5954}
+      \strng{authorbibnamehash}{d1cd80b0af9cc41fba094e89930b5954}
+      \strng{authornamehash}{d1cd80b0af9cc41fba094e89930b5954}
+      \strng{authorfullhash}{d1cd80b0af9cc41fba094e89930b5954}
+      \field{sortinit}{2}
+      \field{sortinithash}{ed39bb39cf854d5250e95b1c1f94f4ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Искусство программирования. Том 3. Сортировка и поиск.}
+      \field{year}{2001}
+    \endentry
+    \entry{wordstat}{online}{}
+      \field{sortinit}{3}
+      \field{sortinithash}{a37a8ef248a93c322189792c34fc68c9}
+      \field{labeltitlesource}{title}
+      \field{title}{English Letter Frequency Counts}
+      \field{urlday}{26}
+      \field{urlmonth}{11}
+      \field{urlyear}{2021}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb http://norvig.com/mayzner.html
+      \endverb
+      \verb{url}
+      \verb http://norvig.com/mayzner.html
+      \endverb
+    \endentry
+    \entry{go}{online}{}
+      \field{sortinit}{4}
+      \field{sortinithash}{e071e0bcb44634fab398d68ad04e69f4}
+      \field{labeltitlesource}{title}
+      \field{title}{Go}
+      \field{urlday}{26}
+      \field{urlmonth}{11}
+      \field{urlyear}{2021}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://go.dev/
+      \endverb
+      \verb{url}
+      \verb https://go.dev/
+      \endverb
+    \endentry
+    \entry{intel}{online}{}
+      \field{sortinit}{5}
+      \field{sortinithash}{5dd416adbafacc8226114bc0202d5fdd}
+      \field{labeltitlesource}{title}
+      \field{title}{Процессор Intel® Core™ i3-8145U}
+      \field{urlday}{26}
+      \field{urlmonth}{11}
+      \field{urlyear}{2021}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://ark.intel.com/content/www/ru/ru/ark/products/149090/intel-core-i3-8145u-processor-4m-cache-up-to-3-90-ghz.html
+      \endverb
+      \verb{url}
+      \verb https://ark.intel.com/content/www/ru/ru/ark/products/149090/intel-core-i3-8145u-processor-4m-cache-up-to-3-90-ghz.html
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

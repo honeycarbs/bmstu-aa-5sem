@@ -1,0 +1,246 @@
+\begin{landscape}
+\addchap[Приложение А. Результаты эксперимента для поиска полным перебором]{\parbox{\linewidth}{\centering Приложение А}}\label{sec:brute}
+\thispagestyle{mylandscape} %Call our predefined page t
+
+\counterwithout{figure}{chapter}
+\counterwithout{figure}{section}
+
+\captionsetup{singlelinecheck = false, justification=centering}
+\begin{center}
+	\begin{figure}[H]
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[%
+				scale only axis,
+				height=0.2\textheight,
+				xmin=0, xmax = 2900,
+				ymin=0, ymax = 3000,
+				xtick distance = 500,
+				width = 1.4\textwidth,
+				bar width = 0.5pt,
+				axis on top,
+				]
+				\addplot[
+				ybar,
+				bar shift=0in,
+				fill=cyan,
+				draw=cyan]
+				plot file {assets/compars-brute.dat};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(0,1442) (2883,1442)} node[above] at (axis cs:250,1441.1) {mid};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(0,2883) (2883,2883)} node[below] at (axis cs:250,2883.1) {max};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(0,1) (2883,1)} node[above] at (axis cs:250,1.1) {min};
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Гистограмма количества сравнений на каждый ключ}
+		\label{fig:brute-comp}
+	\end{figure}
+\end{center}
+
+\begin{center}
+	\begin{figure}[H]
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[%
+				scale only axis,
+				height=0.24\textheight,
+				xmin=0, xmax = 481,
+				ymin=0, ymax = 3000,
+				xtick distance = 50,
+				width = 1.4\textwidth,
+				bar width = 0.5pt,
+				axis on top,
+				]
+				\addplot[
+				ybar,
+				bar shift=0in,
+				fill=cyan,
+				draw=cyan]
+				plot file {assets/brutealph-481.dat};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(0,1442) (481,1442)} node[above] at (axis cs:250,1442.1) {mid};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(0,2883) (481,2883)} node[below] at (axis cs:250,2883.1) {max};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(0,1) (481,1)} node[above] at (axis cs:250,1.1) {min};
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Гистограмма количества сравнений на каждый ключ (отсортировано по алфавиту, ключи 0 -- 481)}
+		\label{fig:brute-alpth1}
+	\end{figure}
+\end{center}
+
+\thispagestyle{mylandscape} %Call our predefined page t
+		
+\begin{center}
+	\begin{figure}[H]
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[%
+				scale only axis,
+				height=0.24\textheight,
+				xmin=481, xmax = 962,
+				ymin=0, ymax = 3000,
+				width = 1.4\textwidth,
+				bar width = 0.5pt,
+				xtick distance = 50,
+				axis on top,
+				]
+				\addplot[
+				ybar,
+				bar shift=0in,
+				fill=cyan,
+				draw=cyan]
+				plot file {assets/brutealph-962.dat};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(482,1442) (962,1442)} node[above] at (axis cs:750,1442.1) {mid};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(482,2883) (962,2883)} node[below] at (axis cs:750,2883.1) {max};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(482,1) (962,1)} node[above] at (axis cs:750,1.1) {min};
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Гистограмма количества сравнений на каждый ключ (отсортировано по алфавиту, ключи 482 -- 962)}
+		\label{fig:brute-alpth2}
+	\end{figure}
+\end{center}
+
+\begin{center}
+	\begin{figure}[H]
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[%
+				scale only axis,
+				height=0.24\textheight,
+				xmin=962, xmax = 1443,
+				ymin=0, ymax = 3000,
+				xtick distance = 50,
+				width = 1.4\textwidth,
+				bar width = 0.5pt,
+				axis on top,
+				]
+				\addplot[
+				ybar,
+				bar shift=0in,
+				fill=cyan,
+				draw=cyan]
+				plot file {assets/brutealph-1443.dat};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(963,1422) (1443,1422)} node[above] at (axis cs:1200,1422.1) {mid};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(963,2883) (1443,2883)} node[below] at (axis cs:1200,2883.1) {max};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(963,1) (1443,1)} node[above] at (axis cs:1200,1.1) {min};
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Гистограмма количества сравнений на каждый ключ (отсортировано по алфавиту, ключи 963 -- 1443)}
+		\label{fig:brute-alpth3}
+	\end{figure}
+\end{center}
+
+\thispagestyle{mylandscape} %Call our predefined page t
+
+\begin{center}
+	\begin{figure}[H]
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[%
+				scale only axis,
+				height=0.24\textheight,
+				xmin=1443, xmax = 1924,
+				ymin=0, ymax = 3000,
+				width = 1.4\textwidth,
+				bar width = 0.5pt,
+				axis on top,
+				]
+				\addplot[
+				ybar,
+				bar shift=0in,
+				fill=cyan,
+				draw=cyan]
+				plot file {assets/brutealph-1924.dat};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(1444,1422) (1924,1422)} node[above] at (axis cs:1700,1422.1) {mid};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(1444,2883) (1924,2883)} node[below] at (axis cs:1700,2883.1) {max};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(1444,1) (1924,1)} node[above] at (axis cs:1700,1.1) {min};
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Гистограмма количества сравнений на каждый ключ (отсортировано по алфавиту, ключи 1444 -- 1924)}
+		\label{fig:brute-alpth4}
+	\end{figure}
+\end{center}
+
+\begin{center}
+	\begin{figure}[H]
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[%
+				scale only axis,
+				height=0.24\textheight,
+				xmin=1924, xmax = 2405,
+				ymin=0, ymax = 3000,
+				width = 1.4\textwidth,
+				bar width = 0.5pt,
+				axis on top,
+				xtick distance = 50,
+				]
+				\addplot[
+				ybar,
+				bar shift=0in,
+				fill=cyan,
+				draw=cyan]
+				plot file {assets/brutealph-2405.dat};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(1925,1442) (2405,1442)} node[above] at (axis cs:2200,1442.1) {mid};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(1925,2883) (2405,2883)} node[below] at (axis cs:2200,2883.1) {max};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(1925,1) (2405,1)} node[above] at (axis cs:2200,1.1) {min};
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Гистограмма количества сравнений на каждый ключ (отсортировано по алфавиту, ключи 1925 -- 2405)}
+		\label{fig:brute-alpth5}
+	\end{figure}
+\end{center}
+
+\begin{center}
+	\begin{figure}[H]
+		\centering
+		\begin{tikzpicture}
+			\begin{axis}[%
+				scale only axis,
+				height=0.24\textheight,
+				xmin=2405, xmax = 2886,
+				ymin=0, ymax = 3000,
+				width = 1.4\textwidth,
+				bar width = 0.5pt,
+				axis on top,
+				xtick distance = 50,
+				]
+				\addplot[
+				ybar,
+				bar shift=0in,
+				fill=cyan,
+				draw=cyan]
+				plot file {assets/brutealph-2886.dat};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(2406,1442) (2880,1442)} node[above] at (axis cs:2600,1442.1) {mid};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(2406,2883) (2880,2883)} node[below] at (axis cs:2600,2883.1) {max};
+				\addplot[purple,sharp plot, dashed, update limits=false]
+				coordinates {(2406,1) (2880,1)} node[above] at (axis cs:2600,1.1) {min};
+			\end{axis}
+		\end{tikzpicture}
+		\caption{Гистограмма количества сравнений на каждый ключ (отсортировано по алфавиту, ключи от 2046)}
+		\label{fig:brute-alpth6}
+	\end{figure}
+\end{center}
+
+\end{landscape}
+
+
+	
